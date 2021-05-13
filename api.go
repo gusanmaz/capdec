@@ -2,6 +2,7 @@ package capdec
 
 import (
 	"embed"
+	"fmt"
 	"github.com/go-rod/rod"
 	"github.com/go-rod/rod/lib/proto"
 	"io/ioutil"
@@ -28,7 +29,7 @@ func Caption(srcImgPath string, captions []string, destImgPath string, codes []s
 	if err != nil {
 		return err
 	}
-	defer os.Remove(htmlFile.Name())
+	//defer os.Remove(htmlFile.Name())
 
 	templ, err := template.ParseFS(embedFS, "template/template.html")
 	if err != nil {
@@ -54,5 +55,15 @@ func Caption(srcImgPath string, captions []string, destImgPath string, codes []s
 	element := page.MustElement("#figure")
 	element.MustScreenshot(destImgPath)
 	page.Close()
+	err = htmlFile.Close()
+	if err != nil{
+		fmt.Println("%v cannot be closed: Error: %v", htmlFile.Name(), err)
+		return err
+	}
+	err = os.Remove(htmlFile.Name())
+	if err != nil{
+		fmt.Println("%v cannot be removed: Error: %v", htmlFile.Name(), err)
+		return err
+	}
 	return nil
 }
