@@ -17,6 +17,11 @@ const (
 
 //go:embed template/template.html
 var embedFS embed.FS
+var browser *rod.Browser
+
+func init(){
+	browser = rod.New().MustConnect()
+}
 
 func Caption(srcImgPath string, captions []string, destImgPath string, codes []string) error {
 	imgBase64, err := GetImgSrcAsBase64(srcImgPath)
@@ -47,7 +52,8 @@ func Caption(srcImgPath string, captions []string, destImgPath string, codes []s
 		return err
 	}
 
-	page := rod.New().MustConnect().MustPage("file://" + htmlFile.Name())
+	//page := rod.New().MustConnect().MustPage("file://" + htmlFile.Name())
+	page := browser.MustPage("file://" + htmlFile.Name())
 	page.SetViewport(&proto.EmulationSetDeviceMetricsOverride{Width: MaxBrowserWidth, Height: MaxBrowserHeight, Scale: 1})
 	for _, code := range codes {
 		page.Eval(code)
@@ -55,6 +61,8 @@ func Caption(srcImgPath string, captions []string, destImgPath string, codes []s
 	element := page.MustElement("#figure")
 	element.MustScreenshot(destImgPath)
 	page.Close()
+
+
 	err = htmlFile.Close()
 	if err != nil{
 		fmt.Println("%v cannot be closed: Error: %v", htmlFile.Name(), err)
