@@ -10,7 +10,7 @@ import (
 	"text/template"
 )
 
-const (
+var (
 	MaxBrowserWidth  = 10000
 	MaxBrowserHeight = 10000
 )
@@ -21,6 +21,11 @@ var browser *rod.Browser
 
 func init(){
 	browser = rod.New().MustConnect()
+}
+
+func ChangeMaxBrowserDimensions(width, height int){
+	MaxBrowserWidth = width
+	MaxBrowserHeight = height
 }
 
 func Caption(srcImgPath string, captions []string, destImgPath string, codes []string) error {
