@@ -53,5 +53,6 @@ func Caption(srcImgPath string, captions []string, destImgPath string, codes []s
 	}
 	element := page.MustElement("#figure")
 	element.MustScreenshot(destImgPath)
+	page.Close()
 	return nil
 }
