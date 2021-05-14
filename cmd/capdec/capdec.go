@@ -31,7 +31,6 @@ func main() {
 	//flag.StringVar(&codeFlag, "code", codeDefault, codeUsage)
 	//flag.StringVar(&codeFlag, "c", codeDefault, codeUsage)
 
-
 	flag.Parse()
 
 	captions := make([]string, 0)

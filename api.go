@@ -5,6 +5,10 @@ import (
 	"fmt"
 	"github.com/go-rod/rod"
 	"github.com/go-rod/rod/lib/proto"
+	"image"
+	_ "image/gif"
+	_ "image/jpeg"
+	_ "image/png"
 	"io/ioutil"
 	"os"
 	"text/template"
@@ -19,13 +23,22 @@ var (
 var embedFS embed.FS
 var browser *rod.Browser
 
-func init(){
+func init() {
 	browser = rod.New().MustConnect()
 }
 
-func ChangeMaxBrowserDimensions(width, height int){
-	MaxBrowserWidth = width
-	MaxBrowserHeight = height
+func GetImageDimensions(path string) (int, int, error) {
+	reader, err := os.Open(path)
+	if err != nil {
+		return -1, -1, err
+	}
+	defer reader.Close()
+
+	im, _, err := image.DecodeConfig(reader)
+	if err != nil {
+		return -1, -1, err
+	}
+	return im.Width, im.Height, nil
 }
 
 func Caption(srcImgPath string, captions []string, destImgPath string, codes []string) error {
@@ -34,12 +47,22 @@ func Caption(srcImgPath string, captions []string, destImgPath string, codes []s
 		return err
 	}
 
+	w, h, err := GetImageDimensions(srcImgPath)
+	if err != nil {
+		return err
+	}
+
+
+	MaxBrowserWidth = int(float64(w) * 1.2)
+	// Assuming captions are not so long.
+	// TODO User could overwrite default browser dimensions assumptions
+	MaxBrowserHeight = h + ((1000 * 1000) / MaxBrowserWidth)
+
 	tempDir := os.TempDir()
 	htmlFile, err := ioutil.TempFile(tempDir, "capdec_*.html")
 	if err != nil {
 		return err
 	}
-	//defer os.Remove(htmlFile.Name())
 
 	templ, err := template.ParseFS(embedFS, "template/template.html")
 	if err != nil {
@@ -57,7 +80,6 @@ func Caption(srcImgPath string, captions []string, destImgPath string, codes []s
 		return err
 	}
 
-	//page := rod.New().MustConnect().MustPage("file://" + htmlFile.Name())
 	page := browser.MustPage("file://" + htmlFile.Name())
 	page.SetViewport(&proto.EmulationSetDeviceMetricsOverride{Width: MaxBrowserWidth, Height: MaxBrowserHeight, Scale: 1})
 	for _, code := range codes {
@@ -67,15 +89,14 @@ func Caption(srcImgPath string, captions []string, destImgPath string, codes []s
 	element.MustScreenshot(destImgPath)
 	page.Close()
 
-
 	err = htmlFile.Close()
-	if err != nil{
-		fmt.Println("%v cannot be closed: Error: %v", htmlFile.Name(), err)
+	if err != nil {
+		fmt.Printf("%v cannot be closed: Error: %v", htmlFile.Name(), err)
 		return err
 	}
 	err = os.Remove(htmlFile.Name())
-	if err != nil{
-		fmt.Println("%v cannot be removed: Error: %v", htmlFile.Name(), err)
+	if err != nil {
+		fmt.Printf("%v cannot be removed: Error: %v", htmlFile.Name(), err)
 		return err
 	}
 	return nil
